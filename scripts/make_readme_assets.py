@@ -3,7 +3,7 @@
 GitHub strips CSS from READMEs, so the tricolour "RAR" wordmark, the buttons and the demos are images.
 Outputs (static/readme/):
   title_{light,dark}.svg            gradient "RAR" (glow + slow sheen) and the full title, text as paths
-  btn_{page,arxiv,code}_{light,dark}.svg   link buttons in the style of the project page
+  btn_{page,arxiv}_{light,dark}.svg        link buttons in the style of the project page
   teaser.webp                       rate-switching clips (Doom / CS2 / FPV) with their live target-FPS curves
   multirate.webp                    three rollout rates per environment on one physical clock
 
@@ -217,7 +217,7 @@ def build_svgs() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     for theme in ("light", "dark"):
         (OUT / f"title_{theme}.svg").write_text(title_svg(theme), encoding="utf-8")
-        for kind, label, tag in (("page", "Project Page", None), ("arxiv", "arXiv", None), ("code", "Code", "soon")):
+        for kind, label, tag in (("page", "Project Page", None), ("arxiv", "arXiv", None)):
             (OUT / f"btn_{kind}_{theme}.svg").write_text(button_svg(kind, label, theme, tag), encoding="utf-8")
     for p in sorted(OUT.glob("*.svg")):
         print(f"[svg] {p.relative_to(PAGE)} ({p.stat().st_size // 1024} KB)")
