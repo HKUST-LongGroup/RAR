@@ -1,6 +1,6 @@
 """Build the site icon: tricolor "RAR" wrapped by a belt (vector), plus raster favicons.
 
-Letters are Montserrat ExtraBold outlines (SIL OFL, see scripts/fonts/OFL.txt) converted
+Letters are Montserrat ExtraBold outlines (SIL OFL, see scripts/fonts/OFL-Montserrat.txt) converted
 to paths, so the SVG has no font dependency. PNG/ICO rasters are rendered with headless
 Microsoft Edge (transparent background).
 

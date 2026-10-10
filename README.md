@@ -1,92 +1,61 @@
 <div align="center">
 
-# RAR: Rate-Adaptive Rollout for Time-Consistent Interactive World Models
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="static/readme/title_dark.svg">
+  <img src="static/readme/title_light.svg" width="680" alt="RAR: Rate-Adaptive Rollout for Time-Consistent Interactive World Models">
+</picture>
 
-Yaoyang Liu<sup>1*</sup>, Dongyu Yan<sup>2*</sup>, Yihua Du<sup>2</sup>, Shengju Qian<sup>3</sup>, Zeke Xie<sup>2</sup>, Xin Wang<sup>3</sup>, Ying-Cong Chen<sup>2</sup>, Long Chen<sup>1&dagger;</sup>
+<p>
+Yaoyang Liu<sup>1*</sup> &nbsp;·&nbsp; Dongyu Yan<sup>2*</sup> &nbsp;·&nbsp; Yihua Du<sup>2</sup> &nbsp;·&nbsp; Shengju Qian<sup>3</sup><br>
+Zeke Xie<sup>2</sup> &nbsp;·&nbsp; Xin Wang<sup>3</sup> &nbsp;·&nbsp; Ying-Cong Chen<sup>2</sup> &nbsp;·&nbsp; Long Chen<sup>1&dagger;</sup>
+</p>
 
-<sup>1</sup>HKUST &nbsp;&nbsp; <sup>2</sup>HKUST (GZ) &nbsp;&nbsp; <sup>3</sup>Tencent LightSpeed
+<p>
+<sup>1</sup>HKUST &nbsp;&nbsp; <sup>2</sup>HKUST (GZ) &nbsp;&nbsp; <sup>3</sup>Tencent LightSpeed<br>
+<sub><sup>*</sup>Equal contribution &nbsp;&nbsp; <sup>&dagger;</sup>Corresponding author</sub>
+</p>
 
-<sup>*</sup>Equal contribution &nbsp;&nbsp; <sup>&dagger;</sup>Corresponding author
-
-<!-- TODO before going public: check the project-page URL, fill in the arXiv ID, and link the code -->
-[![Project Page](https://img.shields.io/badge/Project-Page-3B4DB7?style=for-the-badge)](https://lazysheeeeeep.github.io/RAR/)
-[![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/XXXX.XXXXX)
-![Code](https://img.shields.io/badge/Code-Coming%20Soon-555555?style=for-the-badge&logo=github)
+<!-- TODO before going public: fill in the arXiv ID (button + BibTeX) and link the code -->
+<a href="https://lazysheeeeeep.github.io/RAR/"><picture><source media="(prefers-color-scheme: dark)" srcset="static/readme/btn_page_dark.svg"><img src="static/readme/btn_page_light.svg" height="38" alt="Project Page"></picture></a>&nbsp;
+<a href="https://arxiv.org/abs/XXXX.XXXXX"><picture><source media="(prefers-color-scheme: dark)" srcset="static/readme/btn_arxiv_dark.svg"><img src="static/readme/btn_arxiv_light.svg" height="38" alt="arXiv"></picture></a>&nbsp;
+<picture><source media="(prefers-color-scheme: dark)" srcset="static/readme/btn_code_dark.svg"><img src="static/readme/btn_code_light.svg" height="38" alt="Code (coming soon)"></picture>
 
 </div>
 
-## TL;DR
+<br>
 
-Interactive world models are usually trained and rolled out at one fixed temporal rate. This couples the pace of the
-generated world to the runtime throughput, and it forces a trade-off between fine motion and long physical horizons.
-**RAR** decouples the two with **Stride-RoPE**, a physical-time temporal RoPE coordinate, together with
-**synchronized multi-stride sampling** of videos and controls. One model can then roll out at training rates and at
-unseen intermediate rates, and it can switch rates on the fly.
+<p align="center">
+  <img src="static/readme/teaser.webp" width="100%" alt="One RAR model following a changing target generation rate on Doom, CS2 and FPV">
+</p>
+<p align="center"><sub>
+One RAR model steers its generation rate <b>while it generates</b>, following the target-FPS curve under each clip.
+The clips play at a fixed 30 FPS, so a high target rate makes the world look slower and a low one makes it look faster.
+</sub></p>
 
-**Videos and interactive demos are on the [project page](https://lazysheeeeeep.github.io/RAR/).**
+> **TL;DR** &nbsp; Interactive world models are usually locked to one temporal rate, so the pace of the generated world
+> depends on how fast the hardware runs, and fine motion competes with long horizons. **RAR** puts frames from every rate
+> on a shared physical-time axis (**Stride-RoPE**) and trains on several strides at once. One model can then generate at
+> any rate in its range, including unseen ones, and change the rate on the fly.
+
+## News
+
+<!-- TODO: adjust the dates when the repository goes public -->
+- **2026.10** &nbsp; The [project page](https://lazysheeeeeep.github.io/RAR/) is online, with interactive demos for every experiment.
+- **Coming soon** &nbsp; The arXiv preprint and the code.
 
 ## Highlights
 
-- **One model, many rollout rates.** RAR generates at its training rates and at unseen intermediate rates. Across Doom,
-  CS2 and FPV, the speed ratio at all six interpolated rates stays within 4.0% of the ideal value.
-- **Online rate switching.** The target rate can change in the middle of a rollout without clearing the KV cache. The
-  measured stride follows the target schedule, with a Pearson correlation of up to 0.998 (FPV, smooth schedule).
-- **A better rate–horizon trade-off.** Under matched wall-clock time, a 213-frame RAR model outperforms 70 FPS baselines
-  trained on 425- and 849-frame windows, which cost 1.56× and 5.25× more time per update.
-- **Works with pretrained world models.** Adapting SANA-WM with RAR improves LPIPS at every rate.
+### One model, any rollout rate
 
-## Abstract
+The same RAR model rolls out at its training rates and at intermediate rates it never saw in training. Starting from the
+same frame and following the same controls, every rate shows the same scene at the same physical time. A higher rate
+just produces more frames along the way.
 
-Video-based interactive world models aim to enable real-time, user-controllable environments. Yet most existing systems
-are trained and rolled out at a fixed temporal rate, limiting both runtime-rate adaptation and physical-horizon
-coverage, a limitation we term **temporal-rate coupling**. Specifically, when runtime generation throughput differs
-from the learned temporal rate, the generated world evolves unintentionally more slowly or quickly. Moreover, using a
-single temporal rate imposes an inherent trade-off between temporal granularity and physical horizon: higher rates
-capture finer motion but cover a shorter duration under a fixed context window. To address both limitations, we
-introduce **Rate-Adaptive Rollout (RAR)**, a framework that enables interactive world models to roll out at
-controllable temporal rates. At its core, *Stride-RoPE* aligns latent frames sampled at different rates on a shared
-physical-time coordinate, enabling consistent multi-rate rollout, unseen-rate generalization, and online rate switching
-without discarding history. Meanwhile, RAR uses multi-stride video sampling to enable joint learning of fine-grained
-dynamics and long-horizon evolution. Across action- and camera-controlled environments, RAR achieves temporally
-consistent multi-rate rollout and online rate switching while preserving high-rate generation quality and extending
-physical horizons under matched training budgets. RAR also transfers to pretrained world models while preserving
-perceptual quality.
-
-## Method
-
-### Stride-RoPE
-
-A video sampled at rate $f$ has temporal stride $s(f) = f_{\mathrm{base}} / f$. Stride-RoPE places latent frame $n$ at
-temporal position $p_n = n\,s(f)$, so equal physical-time intervals give equal relative rotary phases at every rate:
-
-$$(p_m - p_n)\,\omega_k = f_{\mathrm{base}}\,(t_m - t_n)\,\omega_k .$$
-
-It adds no parameters, and at $f = f_{\mathrm{base}}$ it reduces exactly to standard RoPE.
-
-<p align="center"><img src="static/images/stride_rope.png" width="90%" alt="Stride-RoPE"></p>
-
-### Rate-Adaptive Rollout
-
-<p align="center"><img src="static/images/pipeline.png" width="70%" alt="RAR framework"></p>
-
-- **Multi-rate training.** Videos and controls are sampled together at several strides, always with the same number of
-  frames. Fine strides learn fast dynamics, and coarse strides reach longer horizons at no extra cost.
-- **Rate-controlled rollout.** The stride sets the rollout rate, $f_{\mathrm{rollout}} = f_{\mathrm{base}} / s$. Choosing
-  the stride to match the runtime throughput keeps the generated world in real time.
-- **Online rate switching.** Positions accumulate the strides, $p_{n+1} = p_n + s_n$. With pre-RoPE keys in the KV cache,
-  the rate can change mid-rollout without resetting the cache.
-
-## Results
-
-### Multi-rate generation
-
-One RAR model rolls out the same scene at three target rates, including an interpolated rate never seen in training.
-Frames at the same physical time match across rates.
-
-<p align="center"><img src="static/images/qualitative.jpg" width="90%" alt="Multi-rate generation on Doom, CS2 and FPV"></p>
+<p align="center"><img src="static/readme/multirate.webp" width="100%" alt="Three rollout rates per environment on one physical clock"></p>
 
 <details>
-<summary>Quantitative results (click to expand)</summary>
+<summary>Quantitative results on Doom, CS2 and FPV</summary>
+<br>
 
 The number of generated frames is fixed within each environment. Drift is the ratio of last-quarter to first-quarter
 LPIPS. SR measures rate fidelity, with an ideal value of 1.
@@ -111,31 +80,73 @@ LPIPS. SR measures rate fidelity, with an ideal value of 1.
 
 </details>
 
-### Online rate switching
+### Change the rate mid-rollout
 
-RAR follows a changing target rate within one continuous rollout, under a smooth schedule and an abrupt schedule of six
-constant-stride segments. The plots show the target stride (dashed) and the stride measured from calibrated optical flow
-on FPV.
+The target rate can change inside one continuous rollout, without clearing the KV cache or restarting generation. The
+stride measured from optical flow (solid) follows the requested schedule (dashed), whether it changes smoothly or jumps,
+with a Pearson correlation of up to 0.998.
 
 <p align="center">
-  <img src="static/images/switch/fpv_smooth.png" width="45%" alt="FPV, smooth schedule">
-  <img src="static/images/switch/fpv_abrupt.png" width="45%" alt="FPV, abrupt schedule">
+  <img src="static/images/switch/fpv_smooth.png" width="40%" alt="FPV, smooth schedule">&nbsp;
+  <img src="static/images/switch/fpv_abrupt.png" width="40%" alt="FPV, abrupt schedule">
 </p>
 
-### Rate–horizon trade-off
+### Longer horizons for the same budget
 
-Under approximately matched wall-clock time on Doom, the 213-frame RAR model is compared with fixed-rate training on
-425- and 849-frame windows.
+Coarse strides cover more physical time with the same number of frames. Under matched wall-clock time on Doom, a
+213-frame RAR model beats 70 FPS baselines trained on 425- and 849-frame windows, which cost 1.56× and 5.25× more time
+per update.
 
-<p align="center"><img src="static/images/eff_fixed_time.png" width="80%" alt="Comparison under matched wall-clock time"></p>
+<p align="center"><img src="static/images/eff_fixed_time.png" width="80%" alt="LPIPS under matched wall-clock time"></p>
 
-### Transfer to pretrained world models
+### Plug into pretrained world models
 
-We adapt the pretrained SANA-WM in two stages: a bidirectional teacher fine-tuned on 10, 20 and 30 FPS data (3k steps),
-then 3k steps of multi-rate Self-Forcing for a streaming student. LPIPS improves at every rate, and rate fidelity
-improves at 10, 20 and 30 FPS. See the [project page](https://lazysheeeeeep.github.io/RAR/) for the videos.
+Two short fine-tuning stages (3k steps each) turn the pretrained SANA-WM into a multi-rate streaming model, and LPIPS
+improves at every rate. The videos are on the [project page](https://lazysheeeeeep.github.io/RAR/#sana).
+
+## How it works
+
+A clip sampled at rate $f$ has temporal stride $s = f_{\mathrm{base}} / f$. **Stride-RoPE** places latent frame $n$ at
+temporal position $p_n = n\,s$, so equal gaps in physical time give equal rotary phases at every rate. It adds no
+parameters and reduces to standard RoPE at $f = f_{\mathrm{base}}$.
+
+<p align="center"><img src="static/images/stride_rope.png" width="88%" alt="Stride-RoPE"></p>
+
+During training, videos and their controls are sampled together at several strides, always with the same number of
+frames: fine strides learn fast dynamics, and coarse strides reach longer horizons at no extra cost. At rollout time the
+stride sets the rate, and since positions simply accumulate the strides ($p_{n+1} = p_n + s_n$), the rate can change at
+any step.
+
+<details>
+<summary>Framework overview</summary>
+<br>
+<p align="center"><img src="static/images/pipeline.png" width="70%" alt="RAR framework"></p>
+</details>
+
+<details>
+<summary>Abstract</summary>
+<br>
+
+Video-based interactive world models aim to enable real-time, user-controllable environments. Yet most existing systems
+are trained and rolled out at a fixed temporal rate, limiting both runtime-rate adaptation and physical-horizon
+coverage, a limitation we term **temporal-rate coupling**. Specifically, when runtime generation throughput differs
+from the learned temporal rate, the generated world evolves unintentionally more slowly or quickly. Moreover, using a
+single temporal rate imposes an inherent trade-off between temporal granularity and physical horizon: higher rates
+capture finer motion but cover a shorter duration under a fixed context window. To address both limitations, we
+introduce **Rate-Adaptive Rollout (RAR)**, a framework that enables interactive world models to roll out at
+controllable temporal rates. At its core, *Stride-RoPE* aligns latent frames sampled at different rates on a shared
+physical-time coordinate, enabling consistent multi-rate rollout, unseen-rate generalization, and online rate switching
+without discarding history. Meanwhile, RAR uses multi-stride video sampling to enable joint learning of fine-grained
+dynamics and long-horizon evolution. Across action- and camera-controlled environments, RAR achieves temporally
+consistent multi-rate rollout and online rate switching while preserving high-rate generation quality and extending
+physical horizons under matched training budgets. RAR also transfers to pretrained world models while preserving
+perceptual quality.
+
+</details>
 
 ## Citation
+
+If you find RAR useful, please consider citing:
 
 ```bibtex
 @article{liu2026rar,
@@ -147,6 +158,4 @@ improves at 10, 20 and 30 FPS. See the [project page](https://lazysheeeeeep.gith
 }
 ```
 
-## License
-
-The content of the project page is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+<sub>The project page and its content are licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).</sub>
