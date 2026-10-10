@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAR: Rate-Adaptive Rollout for Time-Consistent Interactive World Models</title>
+  <meta name="description" content="RAR enables a single interactive world model to be trained and rolled out across multiple temporal rates, with unseen-rate generalization and online rate switching.">
+  <meta name="keywords" content="world model, interactive video generation, rate-adaptive rollout, Stride-RoPE, RAR">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="RAR: Rate-Adaptive Rollout for Time-Consistent Interactive World Models">
+  <meta property="og:description" content="One world model, any rollout rate: Stride-RoPE + multi-stride training for time-consistent interactive world models.">
+  <meta property="og:image" content="static/images/qualitative.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("rar-theme");
+        document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="icon" href="static/images/favicon.ico?v=4" sizes="32x32">
+  <link rel="icon" href="static/images/favicon.svg?v=4" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="static/images/apple-touch-icon.png?v=4">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Inter+Tight:wght@700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/style.css">
+</head>
+<body>
+
+<div class="tricolor-bar"></div>
+
+<nav class="topnav" id="topnav">
+  <div class="topnav-inner">
+    <a class="brand" href="#top">
+      <span class="rar-word small"><span class="rw-text">RAR</span></span>
+    </a>
+    <div class="nav-links">
+      <a href="#abstract">Abstract</a>
+      <a href="#problem">Motivation</a>
+      <a href="#method">Method</a>
+      <a href="#multirate">Multi-Rate Gen</a>
+      <a href="#switch">Rate Switching</a>
+      <a href="#sana">Portability</a>
+      <a href="#bibtex">BibTeX</a>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark / light mode">
+      <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor"/></svg>
+      <svg class="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></g></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- ============================ HERO ============================ -->
+<header class="hero" id="top">
+  <div class="container">
+    <h1 class="title">
+      <span class="rar-word big" data-text="RAR"><span class="rw-text">RAR</span></span><span class="sr-only">:</span>
+      <span class="title-rest"><span class="c-top">R</span>ate-<span class="c-mid">A</span>daptive <span class="c-bottom">R</span>ollout for<br>Time-Consistent Interactive World Models</span>
+    </h1>
+
+    <p class="authors">
+      <span class="author">Yaoyang Liu<sup>1*</sup></span>
+      <span class="author">Dongyu Yan<sup>2*</sup></span>
+      <span class="author">Yihua Du<sup>2</sup></span>
+      <span class="author">Shengju Qian<sup>3</sup></span>
+      <span class="author">Zeke Xie<sup>2</sup></span>
+      <span class="author">Xin Wang<sup>3</sup></span>
+      <span class="author">Ying-Cong Chen<sup>2</sup></span>
+      <span class="author">Long Chen<sup>1&dagger;</sup></span>
+    </p>
+    <div class="affiliations">
+      <span><sup>1</sup>HKUST</span>
+      <span><sup>2</sup>HKUST (GZ)</span>
+      <span><sup>3</sup>Tencent LightSpeed</span>
+    </div>
+    <div class="notes"><sup>*</sup>Equal contribution &nbsp;&nbsp; <sup>&dagger;</sup>Corresponding author</div>
+
+    <!-- TODO: replace "#" with real links (arXiv / code) before publishing -->
+    <div class="link-buttons">
+      <a class="btn" href="#" data-pending="arXiv"><i class="ai ai-arxiv"></i>arXiv</a>
+      <a class="btn" href="#" data-pending="Code"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>Code</a>
+      <a class="btn" href="#multirate"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="15" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M17 10l5-3v10l-5-3z" fill="currentColor"/></svg>Videos</a>
+      <a class="btn" href="#bibtex"><svg viewBox="0 0 24 24"><path d="M7 4h10a2 2 0 0 1 2 2v14l-7-4-7 4V6a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>BibTeX</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============================ TEASER ============================ -->
+<section class="section teaser" id="teaser">
+  <div class="container">
+    <div class="teaser-layout">
+      <div class="teaser-main" id="teaser-main"></div>
+
+      <aside class="teaser-side">
+        <div class="eyebrow">Controllable generation rate</div>
+        <h2 class="teaser-title">One model, a rollout rate you can steer in real time</h2>
+        <p class="teaser-desc">
+          One RAR model changes its target generation rate <b>while it generates</b>, following the FPS curve under the
+          video. The clip plays at a <b>fixed 30&nbsp;FPS</b>, so a high target rate makes the world look <b>slower</b> and a
+          low one makes it look <b>faster</b>. Those speed changes are the rate control at work.
+        </p>
+        <div class="tz-controls">
+          <div class="tz-block">
+            <span class="g-label">Environment</span>
+            <div class="tz-thumbs" id="teaser-envs"></div>
+          </div>
+          <div class="tz-block">
+            <span class="g-label">Rate schedule</span>
+            <div class="seg" id="teaser-schedule" role="tablist">
+              <button type="button" data-v="smooth" class="active">Smooth</button>
+              <button type="button" data-v="abrupt">Abrupt</button>
+            </div>
+          </div>
+          <p class="tz-hint">Click the video to pause. Drag on the curve to scrub.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ TL;DR ============================ -->
+<section class="section">
+  <div class="container">
+    <div class="tldr">
+      <div class="tldr-label">TL;DR</div>
+      <p>
+        Interactive world models are usually trained and rolled out at one fixed temporal rate. This couples the pace of the
+        generated world to the runtime throughput, and it forces a trade-off between fine motion and long physical horizons.
+        <b>RAR</b> decouples the two with <b>Stride-RoPE</b>, a physical-time temporal RoPE coordinate, together with
+        <b>synchronized multi-stride sampling</b> of videos and controls. One model can then roll out at training rates and at
+        unseen intermediate rates, and it can switch rates on the fly.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ ABSTRACT ============================ -->
+<section class="section alt" id="abstract">
+  <div class="container">
+    <h2 class="section-title">Abstract</h2>
+    <p class="abstract prose">
+      Video-based interactive world models aim to enable real-time, user-controllable environments.
+      Yet most existing systems are trained and rolled out at a fixed temporal rate, limiting both runtime-rate adaptation
+      and physical-horizon coverage&mdash;a limitation we term <b>temporal-rate coupling</b>.
+      Specifically, when runtime generation throughput differs from the learned temporal rate, the generated world evolves
+      unintentionally more slowly or quickly.
+      Moreover, using a single temporal rate imposes an inherent trade-off between temporal granularity and physical horizon:
+      higher rates capture finer motion but cover a shorter duration under a fixed context window.
+      To address both limitations, we introduce <b><span class="c-top">R</span>ate-<span class="c-mid">A</span>daptive
+      <span class="c-bottom">R</span>ollout</b> (RAR), a framework that enables interactive world models to roll out at
+      controllable temporal rates.
+      At its core, <em>Stride-RoPE</em> aligns latent frames sampled at different rates on a shared physical-time coordinate,
+      enabling consistent multi-rate rollout, unseen-rate generalization, and online rate switching without discarding history.
+      Meanwhile, RAR uses multi-stride video sampling to enable joint learning of fine-grained dynamics and long-horizon evolution.
+      Across action- and camera-controlled environments, RAR achieves temporally consistent multi-rate rollout and online rate
+      switching while preserving high-rate generation quality and extending physical horizons under matched training budgets.
+      RAR also transfers to pretrained world models while preserving perceptual quality.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ PROBLEM ============================ -->
+<section class="section" id="problem">
+  <div class="container">
+    <h2 class="section-title">Motivation: Temporal-Rate Coupling</h2>
+    <p class="lead">
+      A conventional world model uses one temporal rate for both training and rollout
+      (<span class="math">f_{\mathrm{train}} = f_{\mathrm{rollout}} = f</span>), so every generated frame advances the world
+      by a fixed <span class="math">1/f</span> seconds. This single rate causes two problems.
+    </p>
+
+    <!-- (a) rate-throughput mismatch -->
+    <div class="mot-card" id="mot-a">
+      <div class="mot-head">
+        <h3 class="mot-title"><span class="mot-tag">(a)</span>Rate&ndash;throughput mismatch</h3>
+      </div>
+      <p class="mot-desc">
+        A machine generates <span class="math">r</span> frames per wall-clock second. Each road has two lanes.
+        <b>Upper lane, fixed-rate model:</b> trained at <span class="math">f = 30</span> FPS, every frame advances the world by
+        1/30&nbsp;s, so the world runs at <span class="math">\rho = r/30</span> of real time.
+        <b>Lower lane, RAR:</b> with <span class="math">f_{\mathrm{rollout}} = r</span>, every frame advances
+        <span class="math">1/r</span>&nbsp;s, so every machine keeps real time (<span class="math">\rho = 1</span>).
+      </p>
+      <div class="mm"></div>
+      <div class="mot-foot" data-slow="Slowed 2.5&times;"></div>
+    </div>
+
+    <!-- (b) rate-horizon trade-off -->
+    <div class="mot-card" id="mot-b">
+      <div class="mot-head">
+        <h3 class="mot-title"><span class="mot-tag">(b)</span>Rate&ndash;horizon trade-off</h3>
+      </div>
+      <div class="hz">
+        <div class="hz-maps"></div>
+        <div class="hz-side">
+          <p class="mot-desc">
+            Every sample holds the same budget of <span class="math">N = 7</span> frames, so its physical horizon is
+            <span class="math">T = (N-1)/f</span>. The band on each map marks the stretch of road one sample covers.
+            A fixed-rate model must choose: a high rate takes fine steps but stops before the turn, and a low rate covers
+            the turn with coarse steps. <b>RAR</b> trains one model on all three strides and gets both.
+          </p>
+          <div class="hz-tl"></div>
+        </div>
+      </div>
+      <div class="mot-foot" data-slow="Slowed 10&times;"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ METHOD ============================ -->
+<section class="section alt" id="method">
+  <div class="container">
+    <h2 class="section-title">Method</h2>
+
+    <h3 class="subsection-title"><span class="dot dot-top"></span>Stride-RoPE: a shared physical-time coordinate</h3>
+    <p>
+      With frame-index RoPE, the relative phase between frames <span class="math">n</span> and <span class="math">m</span> is
+      <span class="math">(m-n)\omega_k = f\,(t_m-t_n)\,\omega_k</span>. This depends on the sampling rate, so the same physical
+      interval is encoded differently at different FPS. Stride-RoPE instead places frames at physical-time positions:
+    </p>
+    <div class="equation-box">
+      <div class="math-display">s(f) = \frac{f_{\mathrm{base}}}{f}, \qquad p_n = n\,s(f), \qquad
+        (p_m - p_n)\,\omega_k = f_{\mathrm{base}}\,(t_m - t_n)\,\omega_k .</div>
+      <div class="equation-note">Equal physical-time intervals give equal relative rotary phases at every rate. No new parameters are added, and at <span class="math">f=f_{\mathrm{base}}</span> the scheme reduces exactly to standard RoPE.</div>
+    </div>
+    <figure class="figure zoomable">
+      <img src="static/images/stride_rope.png" alt="Stride-RoPE" loading="lazy">
+      <figcaption>Video sampled with temporal stride <span class="math">s</span> uses RoPE positions <span class="math">p_n = ns</span>, so equal physical-time intervals induce equal relative phases across sampling rates.</figcaption>
+    </figure>
+
+    <h3 class="subsection-title"><span class="dot dot-mid"></span>Rate-Adaptive Rollout framework</h3>
+    <div class="framework">
+      <figure class="figure zoomable pipeline-fig">
+        <img src="static/images/pipeline.png" alt="RAR pipeline" loading="lazy">
+        <figcaption><b>(a)</b> Multi-stride training and rate-controlled rollout. <b>(b)</b> Rate switching with stride-aware spacing.</figcaption>
+      </figure>
+      <div class="method-points">
+        <div class="mp mp-top">
+          <h4>Multi-rate training</h4>
+          <p>Videos and controls are sampled together at several strides
+            <span class="math">s \in \mathcal{S}_{\mathrm{train}}</span>, always with <span class="math">N</span> frames.
+            Fine strides learn fast dynamics, and coarse strides reach longer horizons at no extra cost.</p>
+        </div>
+        <div class="mp mp-mid">
+          <h4>Rate-controlled rollout</h4>
+          <p>The stride sets the rate, <span class="math">f_{\mathrm{rollout}} = f_{\mathrm{base}}/s</span>.
+            Choosing <span class="math">s = f_{\mathrm{base}}/r</span> matches the runtime throughput
+            (<span class="math">\rho = 1</span>), and unseen intermediate rates work too.</p>
+        </div>
+        <div class="mp mp-bottom">
+          <h4>Online rate switching</h4>
+          <p>Positions accumulate the strides, <span class="math">p_{n+1} = p_n + s_n</span>. With pre-RoPE keys in the
+            KV cache, the rate can change mid-rollout without resetting the cache.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ MULTI-RATE ============================ -->
+<section class="section" id="multirate">
+  <div class="container">
+    <h2 class="section-title">Multi-Rate Generation</h2>
+    <p class="lead">
+      One RAR model generates the same rollout at three target rates, including an <span class="badge badge-interp">Interp.</span>
+      intermediate rate. All three share the same initial condition and the same physical-time control trajectory.
+    </p>
+    <div class="mr" id="mr-viewer"></div>
+    <p class="figure-note">
+      Each panel is played at its own target rate, so all three follow one shared physical clock. A higher rate produces more
+      frames per second, so its frame index grows faster. At any moment the scenes still match, because RAR advances the world
+      by the same physical time regardless of the rate. Click a matched time to pause on it and compare the panels.
+    </p>
+
+    <h3 class="subsection-title"><span class="dot dot-mid"></span>Interactive video gallery</h3>
+    <p class="hint">Pick an environment and a target rollout rate. Each video shows <b>ground truth (left)</b> and <b>RAR generation (right)</b>, played at its target rate.</p>
+    <div class="gallery" id="gallery-fixed" data-kind="fixed"></div>
+
+    <h3 class="subsection-title"><span class="dot dot-top"></span>Quantitative results</h3>
+    <p class="hint">The number of generated frames is fixed within each environment. Drift is the ratio of last-quarter to first-quarter LPIPS. SR measures rate fidelity, with an ideal value of 1.</p>
+    <div class="table-wrap">
+      <table class="results">
+        <thead>
+          <tr><th>Environment</th><th>FPS</th><th>Type</th><th>Horizon (s)</th><th>LPIPS &darr;</th><th>Drift</th><th>DOVER &uarr;</th><th>SR &rarr; 1</th></tr>
+        </thead>
+        <tbody>
+          <tr class="grp-start"><td rowspan="5" class="env">Doom</td><td>14</td><td>Train</td><td>15.1</td><td>0.4279</td><td>1.17</td><td>0.3205</td><td>0.923</td></tr>
+          <tr class="interp"><td>28</td><td><span class="badge badge-interp">Interp.</span></td><td>7.6</td><td>0.4179</td><td>1.22</td><td>0.3269</td><td>1.003</td></tr>
+          <tr><td>35</td><td>Train</td><td>6.1</td><td>0.3991</td><td>1.27</td><td>0.3153</td><td>0.999</td></tr>
+          <tr class="interp"><td>49</td><td><span class="badge badge-interp">Interp.</span></td><td>4.3</td><td>0.4003</td><td>1.26</td><td>0.3156</td><td>0.986</td></tr>
+          <tr><td>70</td><td>Train</td><td>3.0</td><td>0.3852</td><td>1.34</td><td>0.3049</td><td>1.082</td></tr>
+
+          <tr class="grp-start"><td rowspan="5" class="env">CS2</td><td>16</td><td>Train</td><td>15.0</td><td>0.6489</td><td>1.52</td><td>0.3928</td><td>0.983</td></tr>
+          <tr class="interp"><td>24</td><td><span class="badge badge-interp">Interp.</span></td><td>10.0</td><td>0.6200</td><td>1.60</td><td>0.4187</td><td>1.009</td></tr>
+          <tr><td>32</td><td>Train</td><td>7.5</td><td>0.5980</td><td>1.61</td><td>0.4402</td><td>0.970</td></tr>
+          <tr class="interp"><td>48</td><td><span class="badge badge-interp">Interp.</span></td><td>5.0</td><td>0.5944</td><td>1.67</td><td>0.4369</td><td>1.024</td></tr>
+          <tr><td>64</td><td>Train</td><td>3.8</td><td>0.5823</td><td>1.69</td><td>0.4323</td><td>1.097</td></tr>
+
+          <tr class="grp-start"><td rowspan="5" class="env">FPV</td><td>20</td><td>Train</td><td>12.0</td><td>0.5247</td><td>1.35</td><td>0.2827</td><td>1.031</td></tr>
+          <tr><td>30</td><td>Train</td><td>8.0</td><td>0.5161</td><td>1.41</td><td>0.2766</td><td>1.040</td></tr>
+          <tr class="interp"><td>40</td><td><span class="badge badge-interp">Interp.</span></td><td>6.0</td><td>0.5011</td><td>1.42</td><td>0.2733</td><td>0.960</td></tr>
+          <tr class="interp"><td>50</td><td><span class="badge badge-interp">Interp.</span></td><td>4.8</td><td>0.5035</td><td>1.45</td><td>0.2843</td><td>1.007</td></tr>
+          <tr><td>60</td><td>Train</td><td>4.0</td><td>0.4944</td><td>1.49</td><td>0.2956</td><td>0.917</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ RATE SWITCH ============================ -->
+<section class="section alt" id="switch">
+  <div class="container">
+    <h2 class="section-title">Dynamic Rollout-Rate Switching</h2>
+    <p class="lead">
+      RAR follows a changing target rate within one continuous rollout, without clearing the KV cache or restarting
+      generation. We test a <b>smooth</b> stride curve and an <b>abrupt</b> schedule of six constant-stride segments.
+    </p>
+    <p class="hint">Each pair is one environment under the two schedules. The chart under each video shows the target FPS, and the marker follows playback. Videos play at a fixed frame rate, so a high target rate looks slower and a low target rate looks faster.</p>
+    <div class="gallery" id="gallery-switch" data-kind="switch"></div>
+
+    <h3 class="subsection-title"><span class="dot dot-top"></span>Measured stride tracking</h3>
+    <div class="track" id="track-viewer"></div>
+  </div>
+</section>
+
+<!-- ============================ RATE-HORIZON ============================ -->
+<section class="section" id="horizon">
+  <div class="container">
+    <h2 class="section-title">Alleviating the Rate&ndash;Horizon Trade-off</h2>
+    <p class="lead">
+      We train on Doom at the bidirectional stage. Under <b>matched updates</b> with a fixed 213-frame window, RAR improves low-rate
+      generation and matches the single-rate 70 FPS baseline at 70 FPS. Under <b>matched wall-clock time</b>, the 213-frame RAR
+      model outperforms 70 FPS baselines trained on 425- or 849-frame windows. Those windows cost
+      <b>1.56&times;</b> and <b>5.25&times;</b> more time per update.
+    </p>
+    <figure class="figure zoomable">
+      <img src="static/images/eff_steps_rates.png" alt="Efficiency under fixed steps" loading="lazy">
+      <figcaption>Fixed update budget. RAR is jointly trained at 14, 35 and 70 FPS, and the fixed-rate baseline is trained only at 70 FPS.</figcaption>
+    </figure>
+    <div class="two-col">
+      <figure class="figure zoomable">
+        <img src="static/images/eff_steps_length.png" alt="Efficiency fixed steps length" loading="lazy">
+        <figcaption>Long-rollout LPIPS under a fixed update budget. Both models use 213-frame windows and are evaluated at 70 FPS.</figcaption>
+      </figure>
+      <figure class="figure zoomable">
+        <img src="static/images/eff_fixed_time.png" alt="Efficiency fixed time" loading="lazy">
+        <figcaption>Approximately matched wall-clock time. 213-frame RAR is compared with 425- and 849-frame fixed-rate training.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ SANA-WM ============================ -->
+<section class="section alt" id="sana">
+  <div class="container">
+    <h2 class="section-title">Portability to Pretrained World Models</h2>
+    <p class="lead">
+      We adapt the pretrained <b>SANA-WM</b> in two stages. First, a bidirectional teacher is fine-tuned on 10, 20 and 30 FPS data
+      (3k steps). Second, 3k steps of multi-rate Self-Forcing produce a streaming student. LPIPS improves at every rate, and rate
+      fidelity improves at 10, 20 and 30 FPS.
+    </p>
+    <div class="gallery sana-gallery" id="gallery-sana" data-kind="sana"></div>
+  </div>
+</section>
+
+<!-- ============================ CONCLUSION ============================ -->
+<section class="section" id="conclusion">
+  <div class="container">
+    <h2 class="section-title">Conclusion</h2>
+    <p class="prose">
+      RAR addresses temporal-rate coupling in interactive world models. It combines physical-time-aligned Stride-RoPE with
+      synchronized multi-stride sampling of videos and controls. The result is consistent generation at training and unseen
+      rates, online rate switching, and a better quality&ndash;horizon trade-off. RAR can adapt its rollout rate to runtime throughput while
+      keeping physical-time semantics consistent, which offers a practical path toward flexible, real-time interactive world models on
+      different hardware.
+    </p>
+  </div>
+</section>
+
+<!-- ============================ BIBTEX ============================ -->
+<section class="section alt" id="bibtex">
+  <div class="container">
+    <h2 class="section-title">BibTeX</h2>
+    <div class="bibtex-box">
+      <button class="copy-btn" id="copy-bib" type="button">Copy</button>
+<pre id="bibtex-text">@article{liu2026rar,
+  title   = {RAR: Rate-Adaptive Rollout for Time-Consistent Interactive World Models},
+  author  = {Liu, Yaoyang and Yan, Dongyu and Du, Yihua and Qian, Shengju and
+             Xie, Zeke and Wang, Xin and Chen, Ying-Cong and Chen, Long},
+  journal = {arXiv preprint arXiv:XXXX.XXXXX},
+  year    = {2026}
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="tricolor-line"></div>
+    <p>
+      &copy; 2026 the RAR authors. This page is licensed under
+      <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
+      The layout follows the style of common academic project pages.
+    </p>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <img alt="">
+</div>
+<div class="toast" id="toast"></div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="static/js/schedules.js"></script>
+<script defer src="static/js/multirate.js"></script>
+<script defer src="static/js/main.js"></script>
+<script defer src="static/js/motivation.js"></script>
+</body>
+</html>
