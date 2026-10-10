@@ -59,6 +59,12 @@ one temporal axis. Training mixes several strides, and at rollout time the strid
 
 <p align="center"><img src="static/images/stride_rope.png" width="88%" alt="Stride-RoPE"></p>
 
+## 📝 TODO
+
+- [x] Release project page
+- [x] Release arXiv paper
+- [ ] Release inference code
+
 ## 📖 Citation
 
 ```bibtex
