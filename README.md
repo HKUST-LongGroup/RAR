@@ -14,9 +14,8 @@ Yaoyang Liu<sup>1*</sup>, Dongyu Yan<sup>2*</sup>, Yihua Du<sup>2</sup>, Shengju
 <sub><sup>*</sup>Equal contribution &nbsp;&nbsp; <sup>&dagger;</sup>Corresponding author</sub>
 </p>
 
-<!-- TODO before going public: fill in the arXiv ID (button + BibTeX) -->
-<a href="https://lazysheeeeeep.github.io/RAR/"><picture><source media="(prefers-color-scheme: dark)" srcset="static/readme/btn_page_dark.svg"><img src="static/readme/btn_page_light.svg" height="38" alt="Project Page"></picture></a>&nbsp;
-<a href="https://arxiv.org/abs/XXXX.XXXXX"><picture><source media="(prefers-color-scheme: dark)" srcset="static/readme/btn_arxiv_dark.svg"><img src="static/readme/btn_arxiv_light.svg" height="38" alt="arXiv"></picture></a>
+<a href="https://hkust-longgroup.github.io/RAR/"><picture><source media="(prefers-color-scheme: dark)" srcset="static/readme/btn_page_dark.svg"><img src="static/readme/btn_page_light.svg" height="38" alt="Project Page"></picture></a>&nbsp;
+<a href="https://arxiv.org/abs/2610.16302"><picture><source media="(prefers-color-scheme: dark)" srcset="static/readme/btn_arxiv_dark.svg"><img src="static/readme/btn_arxiv_light.svg" height="38" alt="arXiv"></picture></a>
 
 </div>
 
@@ -38,9 +37,8 @@ change it on the fly**.
 
 ## 📣 News
 
-<!-- TODO: adjust the dates when the repository goes public -->
-- **2026.10** &nbsp; The [project page](https://lazysheeeeeep.github.io/RAR/) is online.
-- **Coming soon** &nbsp; The arXiv preprint and the code.
+- **2026.10** &nbsp; The paper is on [arXiv](https://arxiv.org/abs/2610.16302), and the [project page](https://hkust-longgroup.github.io/RAR/) is online.
+- **Coming soon** &nbsp; The inference code.
 
 ## ✨ Highlights
 
@@ -72,7 +70,7 @@ one temporal axis. Training mixes several strides, and at rollout time the strid
   title   = {RAR: Rate-Adaptive Rollout for Time-Consistent Interactive World Models},
   author  = {Liu, Yaoyang and Yan, Dongyu and Du, Yihua and Qian, Shengju and
              Xie, Zeke and Wang, Xin and Chen, Ying-Cong and Chen, Long},
-  journal = {arXiv preprint arXiv:XXXX.XXXXX},
+  journal = {arXiv preprint arXiv:2610.16302},
   year    = {2026}
 }
 ```
